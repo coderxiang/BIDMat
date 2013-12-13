@@ -14,6 +14,10 @@ public final class CUMAT {
 
     public static native int applyiop(Pointer A, int Anrows, int Ancols, Pointer B, int Bnrows, int Bncols, Pointer C, int opn);
     
+    public static native int copyToInds2D(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
+
+    public static native int copyFromInds2D(Pointer A, int lda, Pointer B, int ldb, Pointer I, int nrows, Pointer J, int ncols);
+    
     public static native int applygfun(Pointer A, Pointer B, int N, int opn);
     
     public static native int applylinks(Pointer A, Pointer L, Pointer C, int nrows, int ncols);
@@ -44,6 +48,18 @@ public final class CUMAT {
     
     public static native int dsmultT(int nr, int nc, int nnz, Pointer A, Pointer Bdata, Pointer Bir, Pointer Bic, Pointer C);
     
+    public static native int accum(Pointer I, Pointer J, Pointer V, Pointer S, int m, int nrows);
+    
+    public static native int accumI(int I, Pointer J, Pointer V, Pointer S, int m, int nrows);
+    
+    public static native int accumJ(Pointer I, int J, Pointer V, Pointer S, int m, int nrows);
+
+    public static native int accumV(Pointer I, Pointer J, float V, Pointer S, int m, int nrows);
+    
+    public static native int accumIV(int I, Pointer J, float V, Pointer S, int m, int nrows);
+    
+    public static native int accumJV(Pointer I, int J, float V, Pointer S, int m, int nrows);  
+    
     public static native int spsum(int nr, int nc, int nnz, Pointer Air, Pointer Aic, Pointer P, Pointer B, int n);
     
     public static native int dds(int nr, int nnz, Pointer A, Pointer B, Pointer Cir, Pointer Cic, Pointer P);
@@ -54,8 +70,16 @@ public final class CUMAT {
 
     public static native int LDAgibbsx(int nr, int nnz, Pointer A, Pointer B, Pointer Cir, Pointer Cic, Pointer P, Pointer Ms, Pointer Us, int k);
     
-    public static native int treeprod(Pointer trees, Pointer feats, Pointer tpos, Pointer otpos, int nrows, int ncols, int ns, int tstride, int ntrees);
+    public static native int treeprod(Pointer trees, Pointer feats, Pointer tpos, Pointer otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth);
 
+    public static native int icopyt(Pointer iptrs, Pointer in, Pointer out, int stride, int nrows, int ncols);
+    
+    public static native int ocopyt(Pointer iptrs, Pointer in, Pointer out, int stride, int nrows, int ncols);
+    
+    public static native int ocopytadd(Pointer iptrs, Pointer in, Pointer out, int stride, int nrows, int ncols);
+    
+    public static native int ocopytmin(Pointer iptrs, Pointer in, Pointer out, int stride, int nrows, int ncols);
+    
     public static native int transpose(Pointer A, int lda, Pointer B, int ldb, int nr, int nc);
     
     public static native int cumsumi(Pointer in, Pointer out, Pointer jc, int nrows, int ncols, int m);

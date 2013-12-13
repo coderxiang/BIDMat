@@ -4,6 +4,10 @@ int apply_binop(float *nativeA, int Anrows, int Ancols, float *nativeB, int Bnro
 
 int apply_biniop(int *nativeA, int Anrows, int Ancols, int *nativeB, int Bnrows, int Bncols, int *nativeC, int opn);
 
+int copyToInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols);
+
+int copyFromInds2D(float *A, int lda, float *B, int ldb, int *I, int nrows, int *J, int ncols);
+
 int set_val(float *A, float val, int length);
 
 int set_ival(float *A, int val, int length);
@@ -42,6 +46,18 @@ int reducebin2op(int nrows, int ncols, float *A, float *B, float *C, int opb, in
 
 int transpose(float *in, int instride, float *out, int outstride, int nrows, int ncols);
 
+int accum(int *I, int *J, float *V, float *S, int m, int nrows);
+
+int accum(int *I, int J, float *V, float *S, int m, int nrows);
+
+int accum(int I, int *J, float *V, float *S, int m, int nrows);
+
+int accum(int *I, int *J, float V, float *S, int m, int nrows);
+
+int accum(int *I, int J, float V, float *S, int m, int nrows);
+
+int accum(int I, int *J, float V, float *S, int m, int nrows);
+
 int cumsumi(int *in, int *out, int *jc, int nrows, int ncols, int m);
 
 int maxs(float *in, float *out, int *outi, int *jc, int m);
@@ -54,7 +70,15 @@ int extractmat(float *a, long long *b, int nrows, int ncols);
 
 int extractmatx(float *a, int *b, long long *c, int n);
 
-int treeprod(int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees);
+int treeprod(unsigned int *trees, float *feats, int *tpos, int *otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth);
+
+int icopy_transpose(int *iptrs, float *in, float *out, int stride, int nrows, int ncols);
+
+int ocopy_transpose(int *iptrs, float *in, float *out, int stride, int nrows, int ncols);
+
+int ocopy_transpose_add(int *iptrs, float *in, float *out, int stride, int nrows, int ncols);
+
+int ocopy_transpose_min(int *iptrs, float *in, float *out, int stride, int nrows, int ncols);
 
 int isortk(int *pkeys, unsigned int *pvals, int n, int asc);
 
