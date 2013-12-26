@@ -58,7 +58,19 @@ public final class CUMAT {
     
     public static native int accumIV(int I, Pointer J, float V, Pointer S, int m, int nrows);
     
-    public static native int accumJV(Pointer I, int J, float V, Pointer S, int m, int nrows);  
+    public static native int accumJV(Pointer I, int J, float V, Pointer S, int m, int nrows); 
+    
+    public static native int iaccum(Pointer I, Pointer J, Pointer V, Pointer S, int m, int nrows);
+    
+    public static native int iaccumI(int I, Pointer J, Pointer V, Pointer S, int m, int nrows);
+    
+    public static native int iaccumJ(Pointer I, int J, Pointer V, Pointer S, int m, int nrows);
+
+    public static native int iaccumV(Pointer I, Pointer J, int V, Pointer S, int m, int nrows);
+    
+    public static native int iaccumIV(int I, Pointer J, int V, Pointer S, int m, int nrows);
+    
+    public static native int iaccumJV(Pointer I, int J, int V, Pointer S, int m, int nrows);
     
     public static native int spsum(int nr, int nc, int nnz, Pointer Air, Pointer Aic, Pointer P, Pointer B, int n);
     
@@ -70,7 +82,9 @@ public final class CUMAT {
 
     public static native int LDAgibbsx(int nr, int nnz, Pointer A, Pointer B, Pointer Cir, Pointer Cic, Pointer P, Pointer Ms, Pointer Us, int k);
     
-    public static native int treeprod(Pointer trees, Pointer feats, Pointer tpos, Pointer otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int doth);
+    public static native int treeprod(Pointer trees, Pointer feats, Pointer tpos, Pointer otvs, int nrows, int ncols, int ns, int tstride, int ntrees);
+
+    public static native int treesteps(Pointer trees, Pointer feats, Pointer tpos, Pointer otpos, int nrows, int ncols, int ns, int tstride, int ntrees, int tdepth);
 
     public static native int icopyt(Pointer iptrs, Pointer in, Pointer out, int stride, int nrows, int ncols);
     
@@ -86,9 +100,13 @@ public final class CUMAT {
     
     public static native int maxs(Pointer in, Pointer out, Pointer outi, Pointer jc, int m);
     
-    public static native int embedmat(Pointer A, Pointer B, int nrows, int ncols);
+    public static native int embedmat2d(Pointer A, Pointer B, int nrows, int ncols);
     
-    public static native int extractmat(Pointer A, Pointer B, int nrows, int ncols);
+    public static native int extractmat2d(Pointer A, Pointer B, int nrows, int ncols);
+    
+    public static native int embedmat(Pointer A, Pointer B, Pointer C, int n);
+    
+    public static native int extractmat(Pointer A, Pointer B, Pointer C, int n);
     
     public static native int lsort(Pointer A, int n, int asc);
     

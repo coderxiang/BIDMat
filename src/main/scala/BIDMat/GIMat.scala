@@ -1,7 +1,9 @@
 package BIDMat
 import jcuda._;
 import jcuda.jcublas.JCublas;
+import jcuda.runtime._
 import jcuda.runtime.JCuda._
+import jcuda.runtime.cudaMemcpyKind._
 import jcuda.runtime.cudaError._
 import jcuda.runtime.cudaMemcpyKind._
 import edu.berkeley.bid.CUMAT;
@@ -27,10 +29,72 @@ class GIMat(nr:Int, nc:Int, val data:Pointer, val realsize:Int) extends Mat(nr, 
     
   override def nnz = length
   
+    def apply(I:GIMat, J:GIMat):GIMat = {
+    val out = GIMat.newOrCheckGIMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
+    CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
+    out
+  }
+  
+  def apply(i:Int, J:GIMat):GIMat = {
+    val I = GIMat(i)
+    val out = GIMat.newOrCheckGIMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
+    CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
+    I.free
+    out
+  }
+  
+  def apply(I:GIMat, j:Int):GIMat = {
+    val J = GIMat(j)
+    val out = GIMat.newOrCheckGIMat(I.length, J.length, null, GUID, I.GUID, J.GUID, "apply".##)
+    CUMAT.copyFromInds2D(data, nrows, out.data, out.nrows, I.data, I.length, J.data, J.length)
+    J.free
+    out
+  }
+  
+  def apply(i:Int, j:Int):Int = {
+    val tmp = new Array[Int](1)
+    cudaMemcpy(Pointer.to(tmp), data.withByteOffset(1L*(i + j*nrows)*Sizeof.FLOAT), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyDeviceToHost)
+    tmp(0)
+  }
+  
+  def update(I:GIMat, J:GIMat, V:GIMat):GIMat = {
+    CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
+    this
+  }
+  
+  def update(i:Int, J:GIMat, V:GIMat):GIMat = {
+  	val I = GIMat(i)
+    CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
+    I.free
+    this
+  }
+    
+  def update(I:GIMat, j:Int, V:GIMat):GIMat = {
+  	val J = GIMat(j)
+    CUMAT.copyToInds2D(V.data, V.nrows, data, nrows, I.data, I.length, J.data, J.length)
+    J.free
+    this
+  }
+      
+  def update(i:Int, j:Int, v:Int):GIMat = {
+    val tmp = new Array[Int](1)
+    tmp(0) = v
+    cudaMemcpy(data.withByteOffset(1L*(i + j*nrows)*Sizeof.FLOAT), Pointer.to(tmp), Sizeof.FLOAT, cudaMemcpyKind.cudaMemcpyHostToDevice)
+    this
+  }
+  
   override def clear = {
   	cudaMemset(data, 0, Sizeof.INT*length)
   	cudaDeviceSynchronize
   	this    
+  }
+  
+  override def izeros(m:Int, n:Int) = {
+    GIMat.izeros(m,n)
+  }
+  
+  override def iones(m:Int, n:Int) = {
+    GIMat.iones(m,n)
   }
   
   override def t = {
@@ -168,6 +232,110 @@ object GIMat {
     out.set(a)
     out
   }
+  
+  def izeros(m:Int, n:Int):GIMat = {
+    val out = GIMat(m,n)
+    out.clear
+    out
+  }
+  
+  def iones(m:Int, n:Int):GIMat = {
+    val out = GIMat(m,n)
+    out.set(1)
+    out
+  }
+  
+  
+  def accumIJ(I:GIMat, J:GIMat, V:GIMat, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, I.GUID, J.GUID, V.GUID, "GIMat_accum".##)
+    out.clear
+    if (I.length != J.length || I.length != V.length) {
+      throw new RuntimeException("GIMat accum: index lengths dont match")
+    }
+    CUMAT.iaccum(I.data, J.data, V.data, out.data, I.length, nrows)
+    Mat.nflops += I.length
+    out
+  }
+  
+  def accumIJ(I:Int, J:GIMat, V:GIMat, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, I, J.GUID, V.GUID, "GIMat_accumI".##)
+    out.clear
+    if (J.length != V.length) {
+      throw new RuntimeException("GIMat accum: index lengths dont match")
+    }
+    CUMAT.iaccumI(I, J.data, V.data, out.data, J.length, nrows)
+    Mat.nflops += J.length
+    out
+  }
+  
+  def accumIJ(I:GIMat, J:Int, V:GIMat, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, I.GUID, J, V.GUID, "GIMat_accumJ".##)
+    out.clear
+    if (I.length != V.length) {
+      throw new RuntimeException("GIMat accum: index lengths dont match")
+    }
+    CUMAT.iaccumJ(I.data, J, V.data, out.data, I.length, nrows)
+    Mat.nflops += I.length
+    out
+  }
+  
+  def accumIJ(I:GIMat, J:GIMat, V:Int, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, I.GUID, J.GUID, V.hashCode, "GIMat_accumV".##)
+    out.clear
+    if (I.length != J.length) {
+      throw new RuntimeException("GIMat accum: index lengths dont match")
+    }
+    CUMAT.iaccumV(I.data, J.data, V, out.data, I.length, nrows)
+    Mat.nflops += I.length
+    out
+  }
+  
+  def accumIJ(I:Int, J:GIMat, V:Int, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, I, J.GUID, V.hashCode, "GIMat_accumIV".##)
+    out.clear
+    CUMAT.iaccumIV(I, J.data, V, out.data, J.length, nrows)
+    Mat.nflops += J.length
+    out
+  }
+  
+  def accumIJ(I:GIMat, J:Int, V:Int, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, I.GUID, J, V.hashCode, "GIMat_accumJV".##)
+    out.clear
+    CUMAT.iaccumJV(I.data, J, V, out.data, I.length, nrows)
+    Mat.nflops += I.length
+    out
+  }
+  
+  def accum(IJ:GIMat, V:GIMat, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    if (IJ.nrows != V.length || IJ.ncols > 2) {
+      throw new RuntimeException("GIMat accum: index lengths dont match")
+    }
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, IJ.GUID, V.GUID, "GIMat_accumIJ".##)
+    out.clear
+    if (IJ.ncols == 2) {
+    	CUMAT.iaccum(IJ.data, IJ.data.withByteOffset(IJ.nrows*Sizeof.INT), V.data, out.data, V.length, nrows)
+    } else {
+      CUMAT.iaccumJ(IJ.data, 0, V.data, out.data, V.length, nrows)
+    }
+    Mat.nflops += V.length
+    out
+  }
+  
+  def accum(IJ:GIMat, V:Int, omat:Mat, nrows:Int, ncols:Int):GIMat = {
+    if (IJ.ncols > 2) {
+      throw new RuntimeException("GIMat accum: index lengths dont match")
+    }
+    val out = GIMat.newOrCheckGIMat(nrows, ncols, omat, IJ.GUID, V.hashCode, "GIMat_accumIJV".##)
+    out.clear
+    if (IJ.ncols == 2) {
+    	CUMAT.iaccumV(IJ.data, IJ.data.withByteOffset(IJ.nrows*Sizeof.INT), V, out.data, IJ.nrows, nrows)
+    } else {
+      CUMAT.iaccumJV(IJ.data, 0, V, out.data, IJ.nrows, nrows)
+    }
+    Mat.nflops += IJ.nrows
+    out
+  }
+ 
   
   def i3sortlexIndsGPU(grams:IMat, inds:IMat, asc:Boolean) = {
     if (grams.nrows != inds.nrows) throw new RuntimeException("i3sortlexIndsGPU mismatched dims")
